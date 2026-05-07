@@ -1,0 +1,133 @@
+name: "Jordan Rivera"
+contact:
+  email: "jordan.rivera@example.com"
+  linkedin: "linkedin.com/in/jordan-rivera-example"
+  phone: "(555) 234-5678"
+  location: "Chicago, IL"
+
+education:
+  - school: "University of Michigan"
+    degree: "B.A. Economics and Cognitive Science; Minor in Statistics"
+    graduation: "May 2028"
+    gpa: "3.89"
+    honors:
+      - "Dean's List (every semester)"
+      - "Club Triathlon Team Captain"
+      - "Academic Excellence Award (2024-2025)"
+      - "Big Ten Behavioral Research Conference Presenter (2025)"
+      - "Phi Beta Kappa (inducted junior year)"
+    relevant_coursework:
+      - "Behavioral Economics"
+      - "Cognitive Psychology"
+      - "Statistics"
+      - "Decision Theory"
+      - "Microeconomics"
+      - "Data Analysis for Social Science"
+
+  - school: "Lincoln Park High School (Chicago)"
+    degree: "High School Diploma"
+    graduation: "2024"
+    gpa: "4.0"
+    honors:
+      - "5 AP Courses"
+      - "Varsity Triathlon Team Captain"
+      - "Illinois State Triathlon Champion (2023)"
+      - "National Merit Commended Scholar"
+      - "Dean's List (all semesters)"
+
+experience:
+  - company: "Mosaic Digital"
+    role: "Growth Analytics Intern"
+    dates: "Summer 2026"
+    location: "Chicago, IL"
+    bullets:
+      - "Performance analytics and audience segmentation across paid digital channels"
+      - "Attribution modeling, creative testing, and conversion rate optimization"
+
+  - company: "Ironpath Logistics"
+    role: "AI & Operations Intern"
+    dates: "May 2025 - September 2025"
+    location: "Chicago, IL"
+    bullets:
+      - "Leveraged AI-powered analytics (Claude, Gemini, ChatGPT) to identify freight pricing patterns and carrier-shipper trends, accelerating report delivery by 4 days"
+      - "Optimized AI models to forecast lane demand, reducing variance in client capacity reports by 18%"
+      - "Streamlined data collection pipelines using AI tools, reducing manual research time by 35%"
+      - "Synthesized AI-generated insights with market intelligence to inform executive routing decisions"
+      - "Enhanced carrier engagement strategies through AI-driven insights, improving on-time delivery metrics"
+
+  - company: "TradeFlow Partners, LLC"
+    role: "Business Development Intern"
+    dates: "May 2024 - September 2024"
+    location: "Chicago, IL"
+    bullets:
+      - "Conducted market research analyzing 40+ commodity buyers and sellers, identifying two platform expansion opportunities that informed executive marketplace launch strategy"
+      - "Analyzed user engagement metrics across 150+ platform interactions, identifying four conversion optimization opportunities that increased trial sign-ups by 19%"
+      - "Researched industrial supply chain trends across three regions, synthesizing findings into executive briefings that guided pricing strategy for 10+ commodity categories"
+      - "Drove cross-team collaboration between 3 departments to reduce vendor onboarding time by 25%"
+      - "Developed six educational guides for prospective partners, supporting acquisition of 20+ new platform users"
+
+projects:
+  - name: "Vantage"
+    description: "Stock research tool designed and directed via AI-collaborative development (Claude Code as coding pair). Multi-source news ingestion with graceful failover, Claude API integration for analysis, SQLite persistence, cron-scheduled daily pulls, Streamlit dashboard. Backtested against market — accepted unfavorable result and pivoted infrastructure rather than rationalizing."
+    tech: ["Python", "SQLite", "Claude API", "Streamlit", "REST APIs", "cron", "EDGAR API"]
+    highlights:
+      - "Directed end-to-end system design in 72 hours using Claude Code as AI coding pair; learned Python in real time"
+      - "Designed multi-source dispatcher architecture and API failover logic"
+      - "Designed and ran backtesting framework; validated against market baseline"
+      - "Demonstrated validation discipline — killed strategy when data showed no edge"
+
+  - name: "Mathetes"
+    description: "Internship application tracker designed and directed via AI-collaborative development. Designed schema, scoring rubric, and pipeline architecture; Claude Code wrote implementation. Aggregates from community-maintained GitHub lists, ATS detection across 11 providers, two-axis Claude scoring against profile and resume."
+    tech: ["Python", "SQLite", "Claude API", "Streamlit"]
+    highlights:
+      - "Multi-axis scoring: fit probability and personal interest weighted independently"
+      - "ATS provider detection for application strategy"
+      - "Idempotent data pipelines for daily refresh"
+
+skills:
+  technical:
+    - "Python (beginner; directed two production pipelines using Claude Code as AI coding pair; reading and modifying AI-generated code; building toward independent fluency)"
+    - "SQLite — schema design, idempotent pipelines"
+    - "REST APIs and multi-source data ingestion"
+    - "Claude API integration — structured outputs, prompt design, grounding"
+    - "Streamlit dashboards"
+    - "cron / scheduling"
+    - "Git basics"
+    - "SQL (beginner, actively learning)"
+    - "Statistics (conceptual, building implementation skills)"
+    - "Excel — advanced (financial modeling, data analysis)"
+    - "PowerPoint"
+
+  domain:
+    - "Behavioral economics applied to decision architecture and market inefficiencies"
+    - "Cognitive science — decision-making, judgment under uncertainty, attention"
+    - "Performance marketing and digital attribution"
+    - "Quantitative analysis and systematic strategy validation"
+    - "Multi-step causal reasoning across geopolitical, supply chain, and equity domains"
+    - "AI/ML applied to operational decision-making with hallucination resistance and validation"
+    - "Adversarial systems thinking — markets, competitive dynamics, persuasion architecture"
+
+  soft:
+    - "High-velocity execution with receptiveness to course-correction"
+    - "Wall-detection — distinguishes technical vs institutional vs fundamental constraints"
+    - "Validation discipline — distrusts impressive outputs, willing to kill own projects"
+    - "Comfortable interrogating tools rather than depending on them"
+    - "Competitive athlete discipline — performance under pressure, long-horizon goal pursuit"
+
+interests:
+  - "Behavioral economics"
+  - "Decision science"
+  - "Personal investing"
+  - "Quantitative finance"
+  - "Defense and dual-use AI"
+  - "Triathlon and endurance sports"
+  - "Backcountry hiking"
+  - "Chess"
+
+athletics:
+  status: "Club Triathlon Team Captain, University of Michigan"
+  notable:
+    - "Illinois State Triathlon Champion (high school, 2023)"
+    - "Michigan Club Triathlon — Team Captain 2025-2026"
+    - "Ann Arbor Sprint Triathlon — 3rd Place Overall (2025)"
+    - "National Merit Commended Scholar"

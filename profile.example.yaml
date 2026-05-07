@@ -1,0 +1,141 @@
+current_status:
+  class_year: 2028
+  school: "University of Michigan"
+  major: "Economics and Cognitive Science; Minor in Statistics"
+  current_role: "Growth Analytics Intern at Mosaic Digital (Summer 2026)"
+  graduation: "May 2028"
+  search_target: "Summer 2027 internships"
+
+preferences:
+  industries_interested:
+    - "Applied AI / LLM tooling — deploying AI to streamline real workflows"
+    - "Vertical AI startups (legal, healthcare, customer service, search, etc.)"
+    - "AI-first companies (applied / solutions / product tracks, not core research)"
+    - "AI tooling teams inside non-AI-first companies"
+    - "Defense tech / dual-use AI (still of interest, secondary)"
+    - "Strategy consulting AI practices (QuantumBlack, BCG X, Accenture AI)"
+  industries_avoid:
+    - "Traditional wealth management / advisory"
+    - "Enterprise sales-driven software where the role is fundamentally sales"
+    - "Pure academic ML research"
+    - "Pure quantitative trading / research (math/CS pedigree not there)"
+positioning_note: >
+  I am an AI-native operator: I find the problem worth solving and orchestrate
+  AI tools to ship the solution. My moat is problem selection and judgment, not
+  writing code by hand. Rank fit on that, not on technical pedigree.
+
+company_size:
+  preferred: "Series A through D with real revenue and fast growth, or strong large-cap AI teams"
+  avoid: "Pre-seed, late-stage stagnant, slow-culture Fortune 500"
+location:
+  preferred: ["Chicago", "SF Bay Area"]
+  open_to: ["NYC", "Remote", "Seattle"]
+  avoid: []
+work_style: "High autonomy, intellectually aggressive teams, ship fast, low tolerance for bureaucracy, comfortable with ambiguity"
+role_types_interested:
+  - "Applied AI Engineer / Applied AI Intern"
+  - "AI Solutions Engineer"
+  - "ML / AI Product roles (analyst, associate PM, intern)"
+  - "Forward Deployed Engineer (commercial AI flavor)"
+  - "AI tooling / internal automation roles"
+  - "BizOps or Strategy at AI-first or AI-adjacent companies"
+
+developing_skills:
+  - skill: "Applying LLMs to real workflows"
+    level: "Three end-to-end projects (Vantage, Mathetes, Pulse) that each use LLMs to turn messy input into structured, validated output. This is the core thing I do."
+  - skill: "LLM API integration"
+    level: "Comfortable with Claude API, structured outputs, prompt design, grounding strategies, hallucination mitigation, calibrated scoring"
+  - skill: "Python"
+    level: "Functional but early — I direct AI coding tools to implement systems while learning Python in real time. Not a fluent from-scratch engineer; effective at building real things with AI assistance."
+  - skill: "SQLite / data modeling"
+    level: "Designed schemas from scratch, built idempotent pipelines across multiple projects"
+  - skill: "Data engineering basics"
+    level: "Multi-source dispatchers, API rate limit handling, cron scheduling, graceful failover"
+  - skill: "Evaluation / validation discipline"
+    level: "Built backtests and pre-committed evaluation frameworks; willing to report null results honestly"
+  - skill: "Streamlit dashboards"
+    level: "Working knowledge — have shipped read-only analytical dashboards"
+  - skill: "Statistics"
+    level: "Solid conceptual foundation from coursework (through multi-factorial ANOVA); building implementation fluency"
+
+active_projects:
+  - name: "Vantage"
+    status: "Passive mode on cron"
+    description: "Stock research tool — multi-source news ingestion, Claude-based analysis, SQLite storage, Streamlit dashboard. Backtested, shown not to beat market baseline, result accepted and infrastructure repurposed rather than rationalized."
+  - name: "Mathetes"
+    status: "Built, in light use"
+    description: "Internship application tracker — aggregates ~20k listings, ATS detection across 11 providers, calibrated two-axis Claude scoring against profile and resume. An LLM system that streamlines a real workflow."
+  - name: "Pulse"
+    status: "Currently building"
+    description: "Predicts US Senate defense votes from senators' public communications. Applies LLMs to extract structured, validated signal from unstructured institutional text, with a pre-committed evaluation framework and explicit guardrails against model overclaiming."
+
+differentiated_strengths:
+  - "Applies LLMs to real workflows with judgment about what models can and can't reliably do"
+  - "Validation discipline — distrusts impressive-sounding outputs, willing to kill own projects when data says to"
+  - "Wall-detection — quickly identifies whether a constraint is technical, institutional, or fundamental"
+  - "Behavioral economics applied to real decisions, not academic"
+  - "Multi-step causal and systems reasoning across domains"
+  - "High execution velocity, receptive to course-correction without ego defense"
+  - "Competitive athlete discipline — sustained focus, performance under pressure, long-horizon goal pursuit"
+  - "Comfortable interrogating AI tools rather than depending on them — knows when the model is wrong"
+
+context_for_scoring: |
+  I'm a 20-year-old University of Michigan junior (3.89 GPA, club triathlon
+  team captain) interning at Mosaic Digital in growth analytics for Summer 2026.
+  My academic background is economics and cognitive science with a statistics
+  minor, but my actual operating style is product/strategy thinking plus applied
+  technical execution.
+
+  My primary target is applied AI roles — specifically, using LLMs to
+  streamline and automate real workflows. I arrived at this by noticing what
+  I actually enjoy: across three projects (Vantage, Mathetes, Pulse), the
+  through line is taking a messy real-world process and building an LLM system
+  that turns it into something structured, validated, and useful. That is the
+  work I want to do, and "applied AI intern" is the name for it.
+
+  I am not a fluent from-scratch software engineer and should not be scored as
+  one. I direct AI coding tools to implement systems while I make the design,
+  integration, and validation decisions. For applied AI roles this is a
+  qualification, not a gap — the job is using AI tools well and exercising
+  judgment about where they fit, not writing systems code from scratch.
+
+  When scoring, weight roles that:
+  - Are genuinely about applying LLMs / AI to real workflows, products, or
+    business processes
+  - Recruit for judgment, systems thinking, and AI fluency rather than years
+    of CS experience or a CS degree
+  - Are genuinely entry-level or first-internship friendly, not disguised
+    new-grad or senior engineering roles
+  - Would teach production-grade AI deployment, evaluation discipline, or
+    customer/workflow context I can't build alone
+  - Sit at AI-first companies (applied/solutions/product tracks), vertical AI
+    startups, AI tooling teams inside larger companies, or AI practices at
+    consulting firms
+
+  De-prioritize roles that:
+  - Are core ML research or require graduate-level math/ML background
+  - Require fluent from-scratch engineering, low-latency systems, or specific frameworks I haven't used
+  - Are fundamentally sales or relationship-cultivation roles
+  - Are pure quant trading or research
+  - Slot me into a narrow function with little learning surface, or sit at
+  - slow-culture large companies
+
+hard_negatives:
+# Score these LOW even when the domain (data / behavioral / AI) matches.
+# The disqualifier is the requirement, not the topic.
+- roles requiring fluent independent coding from scratch (SWE, ML engineer, data scientist, quant)
+- roles filtering on CS/math degree or heavy DSA/algorithms screens
+- back-office or pure-analyst roles with no ownership of a number or P&L
+- large-org IC tracks where comp is capped salary with no equity
+
+target_archetypes:
+- AI solutions / AI forward-deployed engineering / applied roles at early-to-mid-stage startups
+- growth / GTM engineering (automating revenue workflows with AI)
+- performance-marketing or operator roles that own a P&L or a core metric
+- operator/strategy roles at companies rich in consumer or behavioral data
+
+positive_signals:
+  - equity component or early-stage (Series Seed–B) — wealth via ownership
+  - "we value builders who ship with AI over traditional engineers"
+  - touches consumer/behavioral data OR internal AI-workflow automation
+  - smaller team but not too small, broad scope, direct line to revenue

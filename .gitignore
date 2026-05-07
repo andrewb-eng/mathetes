@@ -1,0 +1,9 @@
+venv/
+.env
+data/
+__pycache__/
+profile.yaml
+resume.yaml
+*.db
+*.sqlite
+*.sqlite3
