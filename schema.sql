@@ -37,3 +37,24 @@ CREATE INDEX IF NOT EXISTS idx_jobs_fingerprint ON jobs(fingerprint);
 CREATE INDEX IF NOT EXISTS idx_jobs_active ON jobs(active);
 CREATE INDEX IF NOT EXISTS idx_jobs_company ON jobs(company_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_posted ON jobs(posted_at);
+CREATE TABLE IF NOT EXISTS match_scores (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    job_id INTEGER NOT NULL REFERENCES jobs(id),
+    profile_version TEXT NOT NULL,
+    resume_version TEXT NOT NULL,
+    qualification_score INTEGER NOT NULL,
+    fit_score INTEGER NOT NULL,
+    class_year_eligible INTEGER NOT NULL,
+    top_matches_json TEXT NOT NULL,
+    top_gaps_json TEXT NOT NULL,
+    fit_reasoning TEXT,
+    summary TEXT,
+    tier TEXT NOT NULL,
+    model TEXT NOT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(job_id, profile_version, resume_version)
+);
+
+CREATE INDEX IF NOT EXISTS idx_scores_job ON match_scores(job_id);
+CREATE INDEX IF NOT EXISTS idx_scores_qualification ON match_scores(qualification_score);
+CREATE INDEX IF NOT EXISTS idx_scores_fit ON match_scores(fit_score);
