@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 from db import get_connection
 from lib.tiering import classify
 
-load_dotenv()
+load_dotenv(override=True)
 
 ROOT = Path(__file__).parent
 PROFILE_PATH = ROOT / "profile.yaml"
@@ -137,8 +137,9 @@ a clearance angle (US citizen with no foreign ties is a real signal).
 that expect independent SQL/Python/modeling from scratch are a qualification \
 gate, not a domain match. Even when the domain (behavioral/consumer data) is a \
 perfect fit, score qualification 20-40 if the role expects the candidate to \
-build pipelines or models unaided. He directs AI tools; he does not write \
-production analytics code solo.
+build pipelines or models unaided. This is a qualification gate: roles \
+requiring independent production analytics code score low even when the \
+domain is a strong fit.
 
 ## fit_score is independent of qualification_score.
 
@@ -161,7 +162,7 @@ fit_score is LOW when the role hits the profile's hard_negatives:
 - the candidate would be the hands-on-keyboard engineer
 
 A behavioral-data-science role at a hot startup is the canonical split:
-HIGH fit (domain he loves), LOW qualification (needs a coder). Surface the
+HIGH fit (domain the candidate wants), LOW qualification (needs a coder). Surface the
 split — do not average the two into a misleading middle.
 
 ## class_year_eligible:

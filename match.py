@@ -11,7 +11,7 @@ from anthropic import Anthropic
 from dotenv import load_dotenv
 from db import get_connection
 
-load_dotenv()
+load_dotenv(override=True)
 
 ROOT = Path(__file__).parent
 PROFILE_PATH = ROOT / "profile.yaml"
