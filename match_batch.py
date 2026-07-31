@@ -395,13 +395,28 @@ if __name__ == "__main__":
     dry = "--dry-run" in args
     args = [a for a in args if a != "--dry-run"]
 
+    # --limit N caps how many jobs one invocation will score. This is a spend
+    # guard for the unattended launchd run: a cycle-opening surge in postings
+    # should cost a capped number of Haiku calls, not an unbounded one. The
+    # rest stay queued and are picked up by the next run.
+    limit = None
+    if "--limit" in args:
+        i = args.index("--limit")
+        try:
+            limit = int(args[i + 1])
+        except (IndexError, ValueError):
+            sys.exit("--limit requires an integer, e.g. --limit 50")
+        del args[i:i + 2]
+
     if not args or args[0] == "tier1":
-        run(["named_target"], dry_run=dry)
+        run(["named_target"], limit=limit, dry_run=dry)
     elif args[0] == "tier2":
-        run(["keyword"], dry_run=dry)
+        run(["keyword"], limit=limit, dry_run=dry)
     elif args[0] == "tier3":
-        run(["solutions_engineering"], dry_run=dry)
+        run(["solutions_engineering"], limit=limit, dry_run=dry)
     elif args[0] == "all":
-        run(["named_target", "solutions_engineering", "keyword"], dry_run=dry)
+        run(["named_target", "solutions_engineering", "keyword"],
+            limit=limit, dry_run=dry)
     else:
-        sys.exit("Usage: python match_batch.py [tier1|tier2|tier3|all] [--dry-run]")
+        sys.exit("Usage: python match_batch.py [tier1|tier2|tier3|all] "
+                 "[--dry-run] [--limit N]")
