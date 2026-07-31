@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Daily Mathetes run. Install/uninstall instructions: deploy/README.md
+
+  Paths must be absolute and must be updated if the repo moves.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.andrewbrown.mathetes.daily</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/andrewbrown/Desktop/mathetes/run_daily.sh</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/andrewbrown/Desktop/mathetes</string>
+
+    <!-- Once a day at 07:30 local. If the Mac is asleep at that moment,
+         launchd runs the job shortly after it next wakes rather than skipping
+         the day, which is the main reason this is a LaunchAgent and not cron. -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>7</integer>
+        <key>Minute</key>
+        <integer>30</integer>
+    </dict>
+
+    <!-- Do not fire on every login/reload, only on the schedule above. -->
+    <key>RunAtLoad</key>
+    <false/>
+
+    <!-- Both streams are appended, so a failure is still readable tomorrow.
+         run_daily.sh prints a timestamped banner per run to delimit them. -->
+    <key>StandardOutPath</key>
+    <string>/Users/andrewbrown/Library/Logs/mathetes/daily.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/andrewbrown/Library/Logs/mathetes/daily.log</string>
+
+    <key>ProcessType</key>
+    <string>Background</string>
+</dict>
+</plist>
