@@ -81,6 +81,14 @@ TIER2_KEYWORDS = [
     # AI consulting — delivery side. Tiering only queues these for scoring;
     # the delivery-vs-advisory fit filter lives in the scoring prompt.
     r"\b(?:gen(?:erative)?\s?ai|ai)\s?consultant\b", r"\bai delivery\b",
+    # Technology-consulting titles. Deliberately narrow: measured against the
+    # full corpus, these two add 10 jobs (Protiviti, Charles River Associates)
+    # where the broader candidates considered alongside them — "data & ai",
+    # "digital transformation", "ai transformation" — added 60 more that were
+    # almost entirely noise (Chick-fil-A, Panasonic Avionics, Zurich, Copart)
+    # with zero on-target hits. This tier is where API spend goes, so recall
+    # that costs precision is not free.
+    r"\btechnology consulting\b", r"\bconsulting analyst\b",
     # Business / strategy / ops — non-CS-friendly
     r"\bbusiness operations\b", r"\bstrategy\b", r"\bstrategy and operations\b",
     r"\bbizops\b", r"\brevenue operations\b", r"\brevops\b",

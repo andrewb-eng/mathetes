@@ -49,6 +49,28 @@ class TestNamedTarget:
         assert classify("Chick-fil-A", "Digital Transformation Intern") != "named_target"
 
 
+class TestConsultingKeywords:
+    """Narrow technology-consulting arm — recall bought without wrecking precision."""
+
+    def test_technology_consulting_is_queued(self):
+        assert classify("Protiviti", "Technology Consulting Intern - 2027") == "keyword"
+
+    def test_consulting_analyst_is_queued(self):
+        assert classify(
+            "Charles River Associates (CRA)",
+            "Data Analytics Consulting Analyst/Associate Intern",
+        ) == "keyword"
+
+    def test_digital_transformation_noise_stays_skipped(self):
+        # Rejected candidate pattern. These are the roles it would have queued.
+        assert classify("Chick-fil-A", "Digital Transformation and Technology Intern") == "skip"
+        assert classify("Panasonic Avionics", "Digital Transformation Intern") == "skip"
+
+    def test_generic_data_and_ai_noise_stays_skipped(self):
+        assert classify("Copart", "Data & AI QA Intern") == "skip"
+        assert classify("Lloyds Bank", "Data and AI Apprentice") == "skip"
+
+
 class TestSkipOrdering:
     def test_tier_signal_beats_skip_pattern(self):
         # "Forward Deployed Software Engineer" also matches the "software
