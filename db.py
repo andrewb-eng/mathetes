@@ -6,8 +6,9 @@ DB_PATH = Path(__file__).parent / "data" / "mathetes.db"
 SCHEMA_PATH = Path(__file__).parent / "schema.sql"
 
 
-def get_connection():
-    """Return a SQLite connection with sane defaults."""
+def get_connection() -> sqlite3.Connection:
+    """Return a SQLite connection with sane defaults, creating data/ if needed."""
+    DB_PATH.parent.mkdir(exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row  # rows behave like dicts
     conn.execute("PRAGMA foreign_keys = ON")
@@ -16,10 +17,13 @@ def get_connection():
 
 def init_db():
     """Create the database file and run schema.sql. Idempotent."""
-    DB_PATH.parent.mkdir(exist_ok=True)
     schema_sql = SCHEMA_PATH.read_text()
-    with get_connection() as conn:
+    conn = get_connection()
+    try:
         conn.executescript(schema_sql)
+        conn.commit()
+    finally:
+        conn.close()
     print(f"DB ready at {DB_PATH}")
 
 

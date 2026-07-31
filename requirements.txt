@@ -2,3 +2,5 @@ requests
 python-dotenv
 anthropic
 pyyaml
+pandas
+streamlit
