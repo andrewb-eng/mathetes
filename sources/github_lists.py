@@ -4,8 +4,9 @@ Both vanshb03 and SimplifyJobs publish a JSON file at a known path that
 backs their README. We hit that JSON directly instead of parsing markdown.
 """
 import json
-import requests
 from typing import Iterator
+
+import requests
 
 # Source configs. Add more here as new repos appear each cycle.
 SOURCES = [
@@ -20,6 +21,10 @@ SOURCES = [
 ]
 
 REQUEST_TIMEOUT = 30
+
+# The internship cycle this project targets. When a multi-term listing carries
+# this cycle anywhere in its terms list, it wins the season field.
+TARGET_SEASON = "Summer 2027"
 
 
 def _fetch_json(url: str) -> list[dict]:
@@ -47,11 +52,18 @@ def _normalize(entry: dict, source_name: str) -> dict | None:
         return None
 
     # Season normalization: vanshb03 uses 'season' (string), Simplify uses
-    # 'terms' (list of strings like "Summer 2026"). Collapse to one field.
+    # 'terms' (list of strings like "Summer 2026"). Collapse to one field,
+    # preferring the target cycle when present — terms[0] alone can hide
+    # "Summer 2027" behind an earlier season (e.g. ["Fall 2026", "Summer 2027"]).
     season = entry.get("season")
     if not season:
         terms = entry.get("terms") or []
-        season = terms[0] if terms else None
+        if any(isinstance(t, str) and t.strip() == TARGET_SEASON for t in terms):
+            season = TARGET_SEASON
+        elif terms:
+            season = terms[0]
+        else:
+            season = None
 
     return {
         "source": source_name,
@@ -108,7 +120,7 @@ if __name__ == "__main__":
     by_season = Counter(j["season"] for j in jobs)
     print(f"By season: {dict(by_season.most_common(10))}")
 
-    print(f"\nSample (first job):")
+    print("\nSample (first job):")
     if jobs:
         sample = {k: v for k, v in jobs[0].items() if k != "raw_payload"}
         print(json.dumps(sample, indent=2, default=str))

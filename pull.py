@@ -5,6 +5,7 @@ from sources import github_lists
 
 
 def main():
+    """Ensure the schema exists, ingest all sources, and commit in one batch."""
     init_db()
     conn = get_connection()
 
@@ -14,10 +15,12 @@ def main():
     finally:
         conn.close()
 
-    print(f"\n=== PULL COMPLETE ===")
+    print("\n=== PULL COMPLETE ===")
     print(f"Total seen:  {stats['total_seen']}")
     print(f"Inserted:    {stats['inserted']}")
     print(f"Updated:     {stats['updated']}")
+    if stats["failed"]:
+        print(f"Failed:      {stats['failed']} (see warnings above)")
 
 
 if __name__ == "__main__":

@@ -3,6 +3,7 @@ import hashlib
 import json
 import sqlite3
 from typing import Iterable
+
 from lib.ats_detect import detect_ats
 
 
@@ -55,75 +56,85 @@ def upsert_jobs(conn: sqlite3.Connection, jobs: Iterable[dict]) -> dict:
     """
     Upsert a stream of normalized job dicts.
 
-    Returns a stats dict: {inserted, updated, total_seen}.
+    A malformed entry is counted and skipped rather than aborting the whole
+    pull. Returns a stats dict: {inserted, updated, failed, total_seen}.
     """
-    stats = {"inserted": 0, "updated": 0, "total_seen": 0}
+    stats = {"inserted": 0, "updated": 0, "failed": 0, "total_seen": 0}
 
     for job in jobs:
         stats["total_seen"] += 1
-
-        ats_provider, ats_token = detect_ats(job["url"])
-        company_id = _get_or_create_company(
-            conn, job["company_name"], ats_provider, ats_token, job["company_url"]
-        )
-
-        fingerprint = _fingerprint(
-            _normalize_company_name(job["company_name"]),
-            job["title"],
-            job["locations"],
-        )
-
-        existing = conn.execute(
-            "SELECT id FROM jobs WHERE source = ? AND source_id = ?",
-            (job["source"], job["source_id"]),
-        ).fetchone()
-
-        if existing is not None:
-            conn.execute(
-                """UPDATE jobs SET
-                       title = ?, locations_json = ?, url = ?,
-                       ats_provider = ?, ats_token = ?,
-                       season = ?, category = ?, degrees_json = ?,
-                       sponsorship = ?, active = ?,
-                       posted_at = ?, updated_at = ?,
-                       last_seen_at = CURRENT_TIMESTAMP,
-                       raw_payload = ?
-                   WHERE id = ?""",
-                (
-                    job["title"],
-                    json.dumps(job["locations"]),
-                    job["url"],
-                    ats_provider, ats_token,
-                    job["season"], job["category"],
-                    json.dumps(job["degrees"]),
-                    job["sponsorship"],
-                    1 if job["active"] else 0,
-                    job["posted_at"], job["updated_at"],
-                    json.dumps(job["raw_payload"]),
-                    existing["id"],
-                ),
-            )
-            stats["updated"] += 1
-        else:
-            conn.execute(
-                """INSERT INTO jobs
-                   (company_id, source, source_id, fingerprint, title,
-                    locations_json, url, ats_provider, ats_token,
-                    season, category, degrees_json, sponsorship,
-                    is_internship, active, posted_at, updated_at, raw_payload)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)""",
-                (
-                    company_id, job["source"], job["source_id"], fingerprint,
-                    job["title"], json.dumps(job["locations"]), job["url"],
-                    ats_provider, ats_token,
-                    job["season"], job["category"],
-                    json.dumps(job["degrees"]),
-                    job["sponsorship"],
-                    1 if job["active"] else 0,
-                    job["posted_at"], job["updated_at"],
-                    json.dumps(job["raw_payload"]),
-                ),
-            )
-            stats["inserted"] += 1
+        try:
+            _upsert_one(conn, job, stats)
+        except (KeyError, TypeError, ValueError, sqlite3.Error) as e:
+            stats["failed"] += 1
+            company = job.get("company_name", "?") if isinstance(job, dict) else "?"
+            print(f"  upsert failed for {company!r}: {type(e).__name__}: {e}")
 
     return stats
+
+
+def _upsert_one(conn: sqlite3.Connection, job: dict, stats: dict) -> None:
+    """Insert or update a single job row, bumping the matching stats counter."""
+    ats_provider, ats_token = detect_ats(job["url"])
+    company_id = _get_or_create_company(
+        conn, job["company_name"], ats_provider, ats_token, job["company_url"]
+    )
+
+    fingerprint = _fingerprint(
+        _normalize_company_name(job["company_name"]),
+        job["title"],
+        job["locations"],
+    )
+
+    existing = conn.execute(
+        "SELECT id FROM jobs WHERE source = ? AND source_id = ?",
+        (job["source"], job["source_id"]),
+    ).fetchone()
+
+    if existing is not None:
+        conn.execute(
+            """UPDATE jobs SET
+                   title = ?, locations_json = ?, url = ?,
+                   ats_provider = ?, ats_token = ?,
+                   season = ?, category = ?, degrees_json = ?,
+                   sponsorship = ?, active = ?,
+                   posted_at = ?, updated_at = ?,
+                   last_seen_at = CURRENT_TIMESTAMP,
+                   raw_payload = ?
+               WHERE id = ?""",
+            (
+                job["title"],
+                json.dumps(job["locations"]),
+                job["url"],
+                ats_provider, ats_token,
+                job["season"], job["category"],
+                json.dumps(job["degrees"]),
+                job["sponsorship"],
+                1 if job["active"] else 0,
+                job["posted_at"], job["updated_at"],
+                json.dumps(job["raw_payload"]),
+                existing["id"],
+            ),
+        )
+        stats["updated"] += 1
+    else:
+        conn.execute(
+            """INSERT INTO jobs
+               (company_id, source, source_id, fingerprint, title,
+                locations_json, url, ats_provider, ats_token,
+                season, category, degrees_json, sponsorship,
+                is_internship, active, posted_at, updated_at, raw_payload)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)""",
+            (
+                company_id, job["source"], job["source_id"], fingerprint,
+                job["title"], json.dumps(job["locations"]), job["url"],
+                ats_provider, ats_token,
+                job["season"], job["category"],
+                json.dumps(job["degrees"]),
+                job["sponsorship"],
+                1 if job["active"] else 0,
+                job["posted_at"], job["updated_at"],
+                json.dumps(job["raw_payload"]),
+            ),
+        )
+        stats["inserted"] += 1
