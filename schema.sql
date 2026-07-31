@@ -58,3 +58,22 @@ CREATE TABLE IF NOT EXISTS match_scores (
 CREATE INDEX IF NOT EXISTS idx_scores_job ON match_scores(job_id);
 CREATE INDEX IF NOT EXISTS idx_scores_qualification ON match_scores(qualification_score);
 CREATE INDEX IF NOT EXISTS idx_scores_fit ON match_scores(fit_score);
+
+-- Application lifecycle tracking. DELIBERATELY DECOUPLED from match_scores:
+-- match_scores is profile-versioned and gets cleared/re-scored whenever the
+-- profile or resume changes, so application state must never live there.
+-- This table is keyed on jobs.id alone and survives every re-scoring cycle.
+-- It also survives the listing going inactive in the feed — an application
+-- you submitted still matters after the posting comes down.
+CREATE TABLE IF NOT EXISTS applications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    job_id INTEGER NOT NULL UNIQUE REFERENCES jobs(id),
+    status TEXT NOT NULL CHECK (status IN
+        ('interested', 'applied', 'OA', 'interview', 'offer', 'rejected', 'withdrawn')),
+    status_updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    applied_at TEXT,
+    notes TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
