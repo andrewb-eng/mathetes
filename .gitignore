@@ -7,3 +7,13 @@ resume.yaml
 *.db
 *.sqlite
 *.sqlite3
+
+# AI tool artifacts. These are auto-generated prompt/activity logs, not source.
+# They must stay out of this public repo: MemBridge transcribes raw prompt text,
+# which has already re-introduced a personal detail (GPA) that was deliberately
+# scrubbed from match_batch.py. CLAUDE.md and AGENTS.md here contain nothing but
+# the generated MemBridge block, so ignoring them loses no hand-written content.
+.membridge/
+.claude/
+CLAUDE.md
+AGENTS.md
