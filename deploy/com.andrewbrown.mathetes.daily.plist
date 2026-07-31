@@ -11,14 +11,20 @@
     <key>Label</key>
     <string>com.andrewbrown.mathetes.daily</string>
 
+    <!-- Invokes the venv interpreter directly on daily.py. Deliberately NOT
+         `/bin/bash run_daily.sh`: the repo is under ~/Desktop, which macOS
+         protects with TCC, and a LaunchAgent running /bin/bash is denied read
+         access to files there — that form fails with "Operation not permitted"
+         before the script starts. The venv interpreter is not denied.
+
+         WorkingDirectory is deliberately omitted for the same reason: launchd
+         chdir-ing into the protected path fails with "error retrieving current
+         directory". daily.py sets its own cwd per step instead. -->
     <key>ProgramArguments</key>
     <array>
-        <string>/bin/bash</string>
-        <string>/Users/andrewbrown/Desktop/mathetes/run_daily.sh</string>
+        <string>/Users/andrewbrown/Desktop/mathetes/venv/bin/python</string>
+        <string>/Users/andrewbrown/Desktop/mathetes/daily.py</string>
     </array>
-
-    <key>WorkingDirectory</key>
-    <string>/Users/andrewbrown/Desktop/mathetes</string>
 
     <!-- Once a day at 07:30 local. If the Mac is asleep at that moment,
          launchd runs the job shortly after it next wakes rather than skipping

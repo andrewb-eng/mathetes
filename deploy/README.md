@@ -37,19 +37,42 @@ tail -n 80 ~/Library/Logs/mathetes/daily.log
 launchctl bootout gui/$(id -u)/com.andrewbrown.mathetes.daily && rm ~/Library/LaunchAgents/com.andrewbrown.mathetes.daily.plist
 ```
 
-## Two things that will bite you
+## Why the agent does not run `run_daily.sh`
 
-**The repo lives in `~/Desktop`, which macOS protects (TCC).** A background
-LaunchAgent gets no GUI permission prompt, so if macOS decides to block it the
-job fails with a permissions error in the log rather than asking. If that
-happens, either grant Full Disk Access to `/bin/bash` in System Settings →
-Privacy & Security → Full Disk Access, or move the repo somewhere unprotected
-(`~/mathetes`) and update the three absolute paths in the plist. Verified
-working under a stripped environment at install time, but TCC behaviour can
-change after an OS update — check the log if runs go quiet.
+The repo lives under `~/Desktop`, which macOS protects with TCC. **A LaunchAgent
+running `/bin/bash` is denied read access to files there.** The obvious plist —
+`ProgramArguments = [/bin/bash, .../run_daily.sh]` — fails before the script ever
+starts:
 
-**The log is appended, never rotated.** It grows slowly (a few KB per run), but
-if it ever gets unwieldy: `: > ~/Library/Logs/mathetes/daily.log`.
+```
+shell-init: error retrieving current directory: getcwd: cannot access parent directories: Operation not permitted
+/bin/bash: /Users/andrewbrown/Desktop/mathetes/run_daily.sh: Operation not permitted
+```
+
+This was isolated with a control agent run from an unprotected directory. The
+denial is specific, not blanket — from a LaunchAgent context:
+
+| Action | Result |
+|---|---|
+| `cd` into the repo | works |
+| run `venv/bin/python` | works |
+| python reads `.env`, `db.py`, the DB | works |
+| `bash`/`head` read `run_daily.sh` | **Operation not permitted** |
+
+So the interpreter is fine; `/bin/bash` is the thing being denied. The plist
+therefore invokes `venv/bin/python daily.py` directly and omits
+`WorkingDirectory` (launchd chdir-ing into the protected path is what produces
+the `getcwd` error). `daily.py` holds the actual steps and `run_daily.sh` is a
+one-line `exec` into it, so the manual and scheduled paths cannot drift.
+
+If you ever move the repo somewhere unprotected (`~/mathetes`), none of this
+applies — but update the two absolute paths in the plist, and rebuild the venv,
+which has its original path baked in.
+
+## The log is appended, never rotated
+
+It grows slowly (a few KB per run). If it gets unwieldy:
+`: > ~/Library/Logs/mathetes/daily.log`.
 
 ## Cost
 
