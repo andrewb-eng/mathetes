@@ -1,6 +1,8 @@
 """Decide which jobs are worth Claude tokens.
 
 Tier 1: company name matches a named target → always score.
+Tier SE: solutions-engineering-family title WITH a technical/AI qualifier →
+         primary target shape, always score.
 Tier 2: title or company hints at an industry of interest → score with
         cheaper prompt.
 Tier 3: skip for now.
@@ -21,10 +23,28 @@ NAMED_TARGETS = [
     "fivetran", "retool", "vercel", "hex",
     # Growth-stage AI startups (title-agnostic, early hires do everything)
     "glean", "harvey", "hebbia", "decagon",
-    # Matrix portfolio — brother referral edge
-    "fivetran", "suno", "apollo graphql", "flock safety", "channel3",
+    # Matrix portfolio — brother referral edge (fivetran listed above)
+    "suno", "apollo graphql", "flock safety", "channel3",
     "luma ai", "lightmatter", "mashgin", "parabola", "lm studio",
     "logrocket", "cloudzero", "smartcat", "hubspot", "zendesk",
+]
+
+# SE-family titles — the candidate's PRIMARY target shape, but only when the
+# listing carries a technical/AI qualifier. A bare generic-SaaS "Sales
+# Engineer" with no such signal is enterprise-sales noise and must not match.
+SE_TITLE_PATTERNS = [
+    r"\bsolutions engineer\b", r"\bsolutions architect\b",
+    r"\bsales engineer\b", r"\bcustomer engineer\b",
+    r"\bdeployment strategist\b", r"\bimplementation engineer\b",
+    r"\bfield engineer\b",
+]
+
+# Technical qualifiers that make an SE-family title a real target. Searched
+# over company + title so "Scale AI — Solutions Engineer Intern" qualifies.
+SE_TECH_QUALIFIERS = [
+    r"\bai\b", r"\bml\b", r"\bartificial intelligence\b",
+    r"\bmachine learning\b", r"\bllm\b", r"\bgen ?ai\b",
+    r"\bdata\b", r"\btechnical\b", r"\bplatform\b",
 ]
 
 # Keyword signals on title + company that suggest a role you'd actually want.
@@ -35,6 +55,9 @@ TIER2_KEYWORDS = [
     r"\bsolutions engineer\b", r"\bsolutions architect\b",
     r"\bsolutions consultant\b", r"\bimplementation\b",
     r"\bcustomer engineer\b", r"\bsales engineer\b",
+    # AI consulting — delivery side. Tiering only queues these for scoring;
+    # the delivery-vs-advisory fit filter lives in the scoring prompt.
+    r"\b(?:gen(?:erative)?\s?ai|ai)\s?consultant\b", r"\bai delivery\b",
     # Business / strategy / ops — non-CS-friendly
     r"\bbusiness operations\b", r"\bstrategy\b", r"\bstrategy and operations\b",
     r"\bbizops\b", r"\brevenue operations\b", r"\brevops\b",
@@ -64,16 +87,28 @@ _target_pat = re.compile(
 )
 _kw_pat = re.compile("|".join(TIER2_KEYWORDS), re.IGNORECASE)
 _skip_pat = re.compile("|".join(SKIP_TITLE_PATTERNS), re.IGNORECASE)
+_se_title_pat = re.compile("|".join(SE_TITLE_PATTERNS), re.IGNORECASE)
+_se_tech_pat = re.compile("|".join(SE_TECH_QUALIFIERS), re.IGNORECASE)
+
 
 def classify(company_name: str, title: str) -> str:
-    """Return 'named_target', 'keyword', or 'skip'."""
+    """Return 'named_target', 'solutions_engineering', 'keyword', or 'skip'.
+
+    Tier signals are checked before skip patterns: a title that matches a
+    keyword (e.g. 'Forward Deployed Software Engineer Intern') takes that
+    tier even when it also matches a skip pattern like 'software engineer'.
+    solutions_engineering outranks keyword so SE-family titles (which also
+    appear in TIER2_KEYWORDS) land in the primary-target tier.
+    """
     company_lc = company_name.lower()
     if _target_pat.search(company_lc):
         return "named_target"
-    if _skip_pat.search(title):
-        return "skip"
     blob = f"{company_name} {title}"
+    if _se_title_pat.search(title) and _se_tech_pat.search(blob):
+        return "solutions_engineering"
     if _kw_pat.search(blob):
         return "keyword"
+    if _skip_pat.search(title):
+        return "skip"
 
     return "skip"

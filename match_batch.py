@@ -1,4 +1,14 @@
-"""Batch score jobs across tiers. Idempotent on (job, profile_version, resume_version)."""
+"""Batch-score jobs against the candidate profile/resume with Claude.
+
+Usage: python match_batch.py [tier1|tier2|tier3|all] [--dry-run]
+(tier1 = named_target, tier2 = keyword, tier3 = solutions_engineering)
+
+Scoring is idempotent on (job_id, profile_version, resume_version): each score
+row is keyed to the SHA256 of the profile and resume YAML, so re-running only
+scores jobs not yet seen under the current config, and editing either file
+naturally triggers a fresh pass. Commits after every score so progress
+survives a crash mid-batch.
+"""
 import hashlib
 import json
 import os
@@ -22,10 +32,27 @@ RESUME_PATH = ROOT / "resume.yaml"
 MODEL = "claude-haiku-4-5-20251001"
 MAX_TOKENS = 1024
 
-client = Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+
+def _get_client() -> Anthropic:
+    """Build the Anthropic client, exiting with a clear message if the key is missing."""
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        sys.exit("ANTHROPIC_API_KEY is not set. Add it to .env (see .env.example) or the environment.")
+    return Anthropic(api_key=api_key)
+
+
+def _load_yaml(path: Path) -> dict:
+    """Parse a YAML config file, exiting with a clear message if missing or invalid."""
+    try:
+        return yaml.safe_load(path.read_text())
+    except FileNotFoundError:
+        sys.exit(f"Missing config file: {path}. Copy {path.stem}.example.yaml to {path.name} to get started.")
+    except yaml.YAMLError as e:
+        sys.exit(f"Could not parse {path}: {e}")
 
 
 def _file_version(path: Path) -> str:
+    """Return a short content hash used as the idempotency key for score rows."""
     return hashlib.sha256(path.read_bytes()).hexdigest()[:12]
 
 
@@ -151,6 +178,15 @@ upward.
 
 fit_score is HIGH when the role matches what the candidate wants, per the
 profile's preferences, target_archetypes, and positive_signals:
+- implementation / deployment / post-sales solutions-engineering scope at an \
+AI company — this is the candidate's PRIMARY target and a top-fit signal. \
+Pre-sales or demo-only SE scope is NOT this signal (lighter technical, \
+further from the goal) — do not credit it as primary-target fit.
+- build-heavy AI consulting / implementation-delivery scope (scope the \
+problem, build the system, deploy it, manage the stakeholder) — the same \
+motion as solutions engineering and equally a top-fit signal. Titles like \
+"AI Implementation", "AI Solutions Consultant", "GenAI Consultant", and \
+"AI Delivery" qualify when the work is shipping working systems for clients.
 - touches consumer/behavioral data, or automates real workflows with AI
 - early-stage with equity, or owns a P&L / core metric (wealth via ownership)
 - operator / solutions / forward-deployed / growth scope, close to revenue
@@ -160,10 +196,42 @@ fit_score is LOW when the role hits the profile's hard_negatives:
 - capped salary, no ownership or equity upside
 - back-office or pure-analyst seat with no metric to own
 - the candidate would be the hands-on-keyboard engineer
+- advisory- or strategy-only consulting with no build-or-deploy artifact \
+(assessments, roadmaps, governance decks, pure research) — score fit LOW \
+regardless of firm prestige; it does not match the candidate's \
+artifact-building trajectory
 
 A behavioral-data-science role at a hot startup is the canonical split:
 HIGH fit (domain the candidate wants), LOW qualification (needs a coder). Surface the
 split — do not average the two into a misleading middle.
+
+## Intra-band discrimination — no anchor-snapping:
+
+The bands set the range; the exact integer within the band must be earned by \
+specifics of THIS listing. Your score will be ranked against dozens of other \
+roles landing in the same band, so a tie carries no information. Do not default \
+to round or repeated anchor values (70, 72, 85, 88) — use the full integer \
+range of the band, differentiating on concrete signals:
+
+- How directly the title and listing language match the candidate's target \
+shape: implementation/deployment-flavored Solutions Engineering titles \
+("Solutions Engineer", "Deployment Strategist", "Implementation Engineer", \
+"Customer Engineer", "Applied AI Solutions", or "Forward Deployed" roles \
+with SE scope), together with build-heavy AI consulting / delivery titles \
+("AI Implementation", "AI Solutions Consultant", "GenAI Consultant", \
+"AI Delivery" — delivery scope, not advisory), are the candidate's PRIMARY \
+target — score their fit at the top of the band, co-equal with or slightly \
+above pure "Forward Deployed Engineer" and "Applied AI Engineer" titles, \
+which remain HIGH-fit reach roles. All of these outrank a generic title at \
+an AI company.
+- Company stage and context against the profile's preferences: Series A–D \
+with real revenue and equity upside outranks pre-seed or slow large-cap.
+- Specificity of overlap between what the listing asks for and what the \
+resume actually shows (named tools, workflows, or domains in common).
+
+Apply this to qualification_score and fit_score independently. Two roles \
+should receive the same score only when they are genuinely indistinguishable \
+on all of the above.
 
 ## class_year_eligible:
 
@@ -171,7 +239,14 @@ True if the listing is for Summer 2027 internships and the candidate's \
 graduation year (May 2028) means they would be a rising senior. False if \
 the listing is for a different cycle (Summer 2026 already happening, \
 Winter 2025/2026, etc.) or explicitly requires a different class year."""
-def _score_one(job, profile, resume, profile_v, resume_v, tier):
+
+
+def _score_one(client, job, profile, resume, profile_v, resume_v, tier):
+    """Score one job with Claude and return the parsed score dict.
+
+    Raises on API failure or unparseable output; the caller counts those as
+    failures and moves on.
+    """
     user_msg = USER_TEMPLATE.format(
         profile_yaml=yaml.safe_dump(profile, sort_keys=False),
         resume_yaml=yaml.safe_dump(resume, sort_keys=False),
@@ -191,6 +266,7 @@ def _score_one(job, profile, resume, profile_v, resume_v, tier):
     )
 
     text = resp.content[0].text.strip()
+    # Defensive: strip markdown fences if Claude includes them despite instructions.
     if text.startswith("```"):
         text = text.split("```")[1]
         if text.startswith("json"):
@@ -206,6 +282,7 @@ def _score_one(job, profile, resume, profile_v, resume_v, tier):
 
 
 def _persist(conn, score):
+    """Insert one score row; the UNIQUE constraint makes duplicate inserts no-ops."""
     conn.execute(
         """INSERT OR IGNORE INTO match_scores
            (job_id, profile_version, resume_version,
@@ -226,13 +303,27 @@ def _persist(conn, score):
 
 
 def candidate_jobs(conn, tier_filter):
-    """Yield active Summer 2027-relevant jobs matching the requested tier."""
+    """Yield active Summer 2027-relevant jobs matching the requested tier.
+
+    Season gate — one arm per tagging pattern observed in the feeds:
+    - season LIKE '%2027%': explicit cycle tags. Multi-term Simplify listings
+      are stamped 'Summer 2027' at ingest whenever that cycle appears anywhere
+      in their terms list (see sources/github_lists.py), so the stored column
+      is trustworthy here.
+    - season IN ('Summer', 'N/A'): vanshb03 stamps bare season names and its
+      repo is 2027-cycle, so bare 'Summer' means Summer 2027; 'N/A' is
+      Simplify's unknown-cycle tag, assumed current.
+    - season IS NULL: source omitted the field; treated like 'N/A' rather
+      than silently dropped.
+    """
     rows = conn.execute("""
         SELECT j.*, c.name AS company_name
         FROM jobs j
         JOIN companies c ON c.id = j.company_id
         WHERE j.active = 1
-          AND (j.season LIKE '%2027%' OR j.season IN ('Summer', 'N/A'))
+          AND (j.season LIKE '%2027%'
+               OR j.season IN ('Summer', 'N/A')
+               OR j.season IS NULL)
         ORDER BY j.posted_at DESC
     """).fetchall()
 
@@ -243,8 +334,9 @@ def candidate_jobs(conn, tier_filter):
 
 
 def run(tier_filter, limit=None, dry_run=False):
-    profile = yaml.safe_load(PROFILE_PATH.read_text())
-    resume = yaml.safe_load(RESUME_PATH.read_text())
+    """Score every unscored job in the given tiers, committing after each one."""
+    profile = _load_yaml(PROFILE_PATH)
+    resume = _load_yaml(RESUME_PATH)
     profile_v = _file_version(PROFILE_PATH)
     resume_v = _file_version(RESUME_PATH)
 
@@ -278,11 +370,12 @@ def run(tier_filter, limit=None, dry_run=False):
         conn.close()
         return
 
+    client = _get_client()
     scored = 0
     failed = 0
     for i, (job, tier) in enumerate(queue, 1):
         try:
-            score = _score_one(job, profile, resume, profile_v, resume_v, tier)
+            score = _score_one(client, job, profile, resume, profile_v, resume_v, tier)
             _persist(conn, score)
             conn.commit()
             scored += 1
@@ -290,7 +383,7 @@ def run(tier_filter, limit=None, dry_run=False):
                   f"q={score['qualification_score']:>3} fit={score['fit_score']:>3}")
         except Exception as e:
             failed += 1
-            print(f"[{i}/{len(queue)}] FAILED on {job['company_name']}: {e}")
+            print(f"[{i}/{len(queue)}] FAILED on {job['company_name']}: {type(e).__name__}: {e}")
         time.sleep(0.2)
 
     print(f"\nScored: {scored}, Failed: {failed}")
@@ -306,7 +399,9 @@ if __name__ == "__main__":
         run(["named_target"], dry_run=dry)
     elif args[0] == "tier2":
         run(["keyword"], dry_run=dry)
+    elif args[0] == "tier3":
+        run(["solutions_engineering"], dry_run=dry)
     elif args[0] == "all":
-        run(["named_target", "keyword"], dry_run=dry)
+        run(["named_target", "solutions_engineering", "keyword"], dry_run=dry)
     else:
-        print(f"Usage: python match_batch.py [tier1|tier2|all] [--dry-run]")
+        sys.exit("Usage: python match_batch.py [tier1|tier2|tier3|all] [--dry-run]")
