@@ -73,6 +73,68 @@ def upsert_jobs(conn: sqlite3.Connection, jobs: Iterable[dict]) -> dict:
     return stats
 
 
+def deactivate_missing(conn: sqlite3.Connection, source: str,
+                       seen_ids: Iterable[str]) -> int:
+    """Mark rows inactive when the current feed no longer lists them.
+
+    upsert_jobs only ever touches rows still present in a feed, so without this
+    a listing that disappears stays active forever. Returns the number of rows
+    newly deactivated (rows already inactive are not recounted).
+
+    Callers must go through sweep_inactive() rather than calling this directly
+    with an empty set — see the guard documented there.
+
+    The seen ids go through a temp table rather than a NOT IN (?, ?, ...) list
+    because a healthy source carries 20k+ live ids, far past SQLite's bound
+    parameter limit.
+    """
+    conn.execute("CREATE TEMP TABLE IF NOT EXISTS _seen_ids (source_id TEXT PRIMARY KEY)")
+    conn.execute("DELETE FROM _seen_ids")
+    conn.executemany("INSERT OR IGNORE INTO _seen_ids (source_id) VALUES (?)",
+                     ((str(sid),) for sid in seen_ids))
+
+    cur = conn.execute(
+        """UPDATE jobs SET active = 0
+           WHERE source = ? AND active = 1
+             AND source_id NOT IN (SELECT source_id FROM _seen_ids)""",
+        (source,),
+    )
+    deactivated = cur.rowcount
+    conn.execute("DELETE FROM _seen_ids")
+    return deactivated
+
+
+def sweep_inactive(conn: sqlite3.Connection, outcomes: dict) -> dict:
+    """Deactivate vanished listings, but only for sources that fetched cleanly.
+
+    This guard is the whole point. github_lists.fetch_all() swallows per-source
+    fetch failures and simply yields nothing for a dead source, so an
+    unguarded sweep would read a 500 — or an upstream schema change — as "the
+    feed is empty now" and deactivate that source's entire corpus. A source is
+    swept only when its fetch succeeded AND returned at least one usable
+    listing; a successful-but-empty payload is treated as suspect, not as
+    authoritative emptiness.
+
+    `outcomes` is the dict populated by fetch_all(). Returns
+    {source: {"swept": bool, "deactivated": int, "reason": str | None}}.
+    """
+    results = {}
+    for source, outcome in outcomes.items():
+        if not outcome.get("ok"):
+            results[source] = {"swept": False, "deactivated": 0,
+                               "reason": f"fetch failed: {outcome.get('error')}"}
+        elif not outcome.get("seen_ids"):
+            results[source] = {"swept": False, "deactivated": 0,
+                               "reason": "fetch returned no usable listings"}
+        else:
+            results[source] = {
+                "swept": True,
+                "deactivated": deactivate_missing(conn, source, outcome["seen_ids"]),
+                "reason": None,
+            }
+    return results
+
+
 def _upsert_one(conn: sqlite3.Connection, job: dict, stats: dict) -> None:
     """Insert or update a single job row, bumping the matching stats counter."""
     ats_provider, ats_token = detect_ats(job["url"])

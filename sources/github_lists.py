@@ -84,26 +84,50 @@ def _normalize(entry: dict, source_name: str) -> dict | None:
     }
 
 
-def fetch_all() -> Iterator[dict]:
-    """Yield normalized job dicts from all configured GitHub list sources."""
+def fetch_all(outcomes: dict | None = None) -> Iterator[dict]:
+    """Yield normalized job dicts from all configured GitHub list sources.
+
+    When `outcomes` is passed, it is filled with one entry per source:
+    {"ok": bool, "seen_ids": set[str], "kept": int, "error": str | None}.
+
+    This exists so the deactivation sweep can tell "this feed no longer lists
+    that job" apart from "this feed did not load". Fetch failures are still
+    swallowed per-source so one dead feed cannot abort the whole pull, but they
+    are now reported instead of vanishing silently.
+
+    Because this is a generator, an entry is only final once the caller has
+    consumed that source's rows; read `outcomes` after the iterator is
+    exhausted, never mid-stream.
+    """
     for src in SOURCES:
-        print(f"Fetching {src['name']}...")
+        name = src["name"]
+        print(f"Fetching {name}...")
+        if outcomes is not None:
+            outcomes[name] = {"ok": False, "seen_ids": set(), "kept": 0, "error": None}
+
         try:
             raw = _fetch_json(src["url"])
         except Exception as e:
             print(f"  FAILED: {e}")
+            if outcomes is not None:
+                outcomes[name]["error"] = f"{type(e).__name__}: {e}"
             continue
 
         kept = 0
         skipped = 0
+        seen_ids = set()
         for entry in raw:
-            normalized = _normalize(entry, src["name"])
+            normalized = _normalize(entry, name)
             if normalized is None:
                 skipped += 1
                 continue
             kept += 1
+            seen_ids.add(str(normalized["source_id"]))
             yield normalized
 
+        if outcomes is not None:
+            outcomes[name] = {"ok": True, "seen_ids": seen_ids,
+                              "kept": kept, "error": None}
         print(f"  {kept} kept, {skipped} skipped (of {len(raw)} total)")
 
 
