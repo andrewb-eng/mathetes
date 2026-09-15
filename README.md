@@ -1,8 +1,8 @@
 # Mathetes
 
-**A personal internship-application pipeline that aggregates ~20,000 listings, then uses Claude to score every one against my actual profile on two independent axes — how qualified I am, and how much I want it — with deliberate calibration discipline so the scores stay honest instead of encouraging.**
+**A personal internship-application pipeline that aggregates ~20,000 listings, then uses Claude to score every one against my actual profile on two independent axes, how qualified I am, and how much I want it, with deliberate calibration discipline so the scores stay honest instead of encouraging.**
 
-The hard part of using an LLM as a scorer isn't getting it to produce numbers — it's getting it to produce numbers you can *trust*. Left to its defaults, Claude clusters scores in a comfortable 70–75 band and softens hard truths to be encouraging. Mathetes is built specifically to fight that: explicit score-band anchors, hard rules for roles a given candidate realistically can't land, and a system prompt that forbids inflating scores. The result is a filter that tells me a quant-research role is a 15, not a polite 70.
+The hard part of using an LLM as a scorer isn't getting it to produce numbers, it's getting it to produce numbers you can *trust*. Left to its defaults, Claude clusters scores in a comfortable 70–75 band and softens hard truths to be encouraging. Mathetes is built specifically to fight that: explicit score-band anchors, hard rules for roles a given candidate realistically can't land, and a system prompt that forbids inflating scores. The result is a filter that tells me a quant-research role is a 15, not a polite 70.
 
 This is a personal tool, not a product — built as a demonstration of applied LLM tooling: take a real workflow, identify what a model can and cannot reliably do, and engineer the constraints that make its output dependable.
 
